@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+<meta charset="UTF-8">
+<title>Szkander</title>
+</head>
+<body>
+    <style>
+
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+            min-height: 100vh;
+            background-color: lightgray;
+        }
+
+        .gomb {
+            padding: 10px;
+            font-family: Arial, Helvetica, sans-serif;
+            text-align: center;
+            font-size: xx-large;
+            border-radius: 10px;
+            border: 2px solid rgb(112, 174, 255);
+            background-color: rgb(205, 242, 255);
+            box-shadow: 2px 2px 5px 2px rgb(112, 174, 255);
+        }
+
+        .gomb:active {
+            background-color: rgb(112, 174, 255);
+        }
+    </style>
+<button id="playBtn" class="gomb">Lejátszás</button>
+
+<script>
+const context = new (window.AudioContext || window.webkitAudioContext)();
+
+async function loadAudio(url) {
+    const response = await fetch(url);
+    const arrayBuffer = await response.arrayBuffer();
+    return await context.decodeAudioData(arrayBuffer);
+}
+
+// Betöltés
+let s1Buffer, s2Buffer, s3Buffer;
+async function loadAllAudio() {
+    s1Buffer = await loadAudio('1.wav');
+    s2Buffer = await loadAudio('2jobb.wav');
+    s3Buffer = await loadAudio('3.wav');
+}
+
+// Hívd meg a betöltést az oldal betöltésekor
+loadAllAudio();
+
+function playBuffer(buffer, startTime, duration=null) {
+    const source = context.createBufferSource();
+    source.buffer = buffer;
+    source.connect(context.destination);
+    if (duration) {
+        source.start(startTime, 0, duration);
+    } else {
+        source.start(startTime);
+    }
+    return source;
+}
+
+document.getElementById('playBtn').addEventListener('click', () => {
+    const now = context.currentTime;
+
+    // Véletlenszerű hossz s2-nek (0.5-3.5 sec)
+    const loopTime = 0.5 + Math.random() * 3; // másodpercben
+    console.log(loopTime);
+    
+    let t = now;
+    playBuffer(s1Buffer, t);
+    t += s1Buffer.duration;
+
+    // s2 loopolása pontosan loopTime ideig
+    const s2LoopDuration = Math.min(loopTime, s2Buffer.duration);
+    playBuffer(s2Buffer, t, s2LoopDuration);
+    t += s2LoopDuration;  // <--- frissítjük az időt
+
+    playBuffer(s3Buffer, t);
+});
+</script>
+</body>
+</html>
